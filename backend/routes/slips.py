@@ -9,29 +9,30 @@ from datetime import datetime
 
 slips_bp = Blueprint('slips', __name__)
 
-# def safe_float(value, default=0.0):
-#     try:
-#         # handle None, empty string, or invalid number safely
-#         return float(value) if value not in (None, '', ' ') else default
-#     except (TypeError, ValueError):
-#         return default
-
+def safe_float(value, default=0.0):
+    """Safely convert value to float, handling empty strings and None"""
+    try:
+        if value in (None, '', ' '):
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 def calculate_fields(data):
     """Calculate all computed fields"""
-    bags = float(data.get('bags', 0))
-    avg_bag_weight = float(data.get('avg_bag_weight', 0))
-    rate = float(data.get('rate', 0))
-    bank_commission = float(data.get('bank_commission', 0))
-    batav_percent = float(data.get('batav_percent', 1))
-    shortage_percent = float(data.get('shortage_percent', 1))
-    dalali_rate = float(data.get('dalali_rate', 10))
-    hammali_rate = float(data.get('hammali_rate', 10))
-    freight = float(data.get('freight', 0))
-    rate_diff = float(data.get('rate_diff', 0))
-    quality_diff = float(data.get('quality_diff', 0))
-    moisture_ded = float(data.get('moisture_ded', 0))
-    tds = float(data.get('tds', 0))
+    bags = safe_float(data.get('bags'), 0)
+    avg_bag_weight = safe_float(data.get('avg_bag_weight'), 0)
+    rate = safe_float(data.get('rate'), 0)
+    bank_commission = safe_float(data.get('bank_commission'), 0)
+    batav_percent = safe_float(data.get('batav_percent'), 1)
+    shortage_percent = safe_float(data.get('shortage_percent'), 1)
+    dalali_rate = safe_float(data.get('dalali_rate'), 10)
+    hammali_rate = safe_float(data.get('hammali_rate'), 10)
+    freight = safe_float(data.get('freight'), 0)
+    rate_diff = safe_float(data.get('rate_diff'), 0)
+    quality_diff = safe_float(data.get('quality_diff'), 0)
+    moisture_ded = safe_float(data.get('moisture_ded'), 0)
+    tds = safe_float(data.get('tds'), 0)
 
     net_weight = round(bags * avg_bag_weight, 2)
     amount = round(net_weight * rate, 2)
@@ -78,11 +79,13 @@ def add_slip():
                 terms_of_delivery, sup_inv_no, gst_no, bags, avg_bag_weight,
                 net_weight, rate, amount, bank_commission, batav_percent, batav,
                 shortage_percent, shortage, dalali_rate, dalali, hammali_rate,
-                hammali, freight, rate_diff, quality_diff, moisture_ded, tds,
-                total_deduction, payable_amount, payment_method,
-                payment_date, payment_amount, prepared_by, authorised_sign,
+                hammali, freight, rate_diff, quality_diff, quality_diff_comment,
+                moisture_ded, moisture_ded_percent, tds, total_deduction, payable_amount,
+                payment_method, payment_date, payment_amount, payment_bank_account,
+                payment_due_date, payment_due_comment, instalment_1, instalment_2,
+                instalment_3, instalment_4, instalment_5, prepared_by, authorised_sign,
                 paddy_unloading_godown
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (
             data.get('company_name', ''),
             data.get('company_address', ''),
@@ -114,13 +117,23 @@ def add_slip():
             data.get('freight', 0),
             data.get('rate_diff', 0),
             data.get('quality_diff', 0),
+            data.get('quality_diff_comment', ''),
             data.get('moisture_ded', 0),
+            data.get('moisture_ded_percent', 0),
             data.get('tds', 0),
             data.get('total_deduction', 0),
             data.get('payable_amount', 0),
             data.get('payment_method', ''),
             data.get('payment_date', ''),
             data.get('payment_amount', 0),
+            data.get('payment_bank_account', ''),
+            data.get('payment_due_date', ''),
+            data.get('payment_due_comment', ''),
+            data.get('instalment_1', ''),
+            data.get('instalment_2', ''),
+            data.get('instalment_3', ''),
+            data.get('instalment_4', ''),
+            data.get('instalment_5', ''),
             data.get('prepared_by', ''),
             data.get('authorised_sign', ''),
             data.get('paddy_unloading_godown', '')
