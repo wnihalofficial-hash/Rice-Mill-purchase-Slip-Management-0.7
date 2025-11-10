@@ -118,6 +118,35 @@ def init_db():
             )
         ''')
 
+        cursor.execute("SHOW COLUMNS FROM purchase_slips")
+        existing_columns = {row[0] for row in cursor.fetchall()}
+
+        columns_to_add = {
+            'payment_due_date': "VARCHAR(50)",
+            'payment_due_comment': "TEXT",
+            'payment_bank_account': "TEXT",
+            'instalment_1': "TEXT",
+            'instalment_2': "TEXT",
+            'instalment_3': "TEXT",
+            'instalment_4': "TEXT",
+            'instalment_5': "TEXT",
+            'quality_diff_comment': "TEXT",
+            'moisture_ded_percent': "DOUBLE DEFAULT 0",
+            'prepared_by': "VARCHAR(255)",
+            'authorised_sign': "VARCHAR(255)",
+            'paddy_unloading_godown': "TEXT"
+        }
+
+        for col_name, col_type in columns_to_add.items():
+            if col_name not in existing_columns:
+                try:
+                    cursor.execute(f"ALTER TABLE purchase_slips ADD COLUMN {col_name} {col_type}")
+                    print(f"✓ Added column: {col_name}")
+                except mysql.connector.Error as err:
+                    if err.errno != 1060:
+                        raise
+                    print(f"- Column {col_name} already exists")
+
         conn.commit()
         cursor.close()
         conn.close()
