@@ -18,21 +18,22 @@ def safe_float(value, default=0.0):
     except (TypeError, ValueError):
         return default
 
+
 def calculate_fields(data):
     """Calculate all computed fields"""
-    bags = safe_float(data.get('bags'), 0)
-    avg_bag_weight = safe_float(data.get('avg_bag_weight'), 0)
-    rate = safe_float(data.get('rate'), 0)
-    bank_commission = safe_float(data.get('bank_commission'), 0)
-    batav_percent = safe_float(data.get('batav_percent'), 1)
-    shortage_percent = safe_float(data.get('shortage_percent'), 1)
-    dalali_rate = safe_float(data.get('dalali_rate'), 10)
-    hammali_rate = safe_float(data.get('hammali_rate'), 10)
-    freight = safe_float(data.get('freight'), 0)
-    rate_diff = safe_float(data.get('rate_diff'), 0)
-    quality_diff = safe_float(data.get('quality_diff'), 0)
-    moisture_ded = safe_float(data.get('moisture_ded'), 0)
-    tds = safe_float(data.get('tds'), 0)
+    bags = safe_float(data.get('bags', 0), 0)
+    avg_bag_weight = safe_float(data.get('avg_bag_weight', 0), 0)
+    rate = safe_float(data.get('rate', 0), 0)
+    bank_commission = safe_float(data.get('bank_commission', 0), 0)
+    batav_percent = safe_float(data.get('batav_percent', 1), 1)
+    shortage_percent = safe_float(data.get('shortage_percent', 1), 1)
+    dalali_rate = safe_float(data.get('dalali_rate', 10), 10)
+    hammali_rate = safe_float(data.get('hammali_rate', 10), 10)
+    freight = safe_float(data.get('freight', 0), 0)
+    rate_diff = safe_float(data.get('rate_diff', 0), 0)
+    quality_diff = safe_float(data.get('quality_diff', 0), 0)
+    moisture_ded = safe_float(data.get('moisture_ded', 0), 0)
+    tds = safe_float(data.get('tds', 0), 0)
 
     net_weight = round(bags * avg_bag_weight, 2)
     amount = round(net_weight * rate, 2)
@@ -50,11 +51,11 @@ def calculate_fields(data):
         'shortage': shortage,
         'dalali': dalali,
         'hammali': hammali,
-        'freight': freight,
-        'rate_diff': rate_diff,
-        'quality_diff': quality_diff,
-        'moisture_ded': moisture_ded,
-        'tds': tds,
+        'freight': safe_float(data.get('freight', 0), 0),
+        'rate_diff': safe_float(data.get('rate_diff', 0), 0),
+        'quality_diff': safe_float(data.get('quality_diff', 0), 0),
+        'moisture_ded': safe_float(data.get('moisture_ded', 0), 0),
+        'tds': safe_float(data.get('tds', 0), 0),
         'total_deduction': total_deduction,
         'payable_amount': payable_amount
     })
@@ -100,32 +101,32 @@ def add_slip():
             data.get('terms_of_delivery', ''),
             data.get('sup_inv_no', ''),
             data.get('gst_no', ''),
-            data.get('bags', 0),
-            data.get('avg_bag_weight', 0),
-            data.get('net_weight', 0),
-            data.get('rate', 0),
-            data.get('amount', 0),
-            data.get('bank_commission', 0),
-            data.get('batav_percent', 1),
-            data.get('batav', 0),
-            data.get('shortage_percent', 1),
-            data.get('shortage', 0),
-            data.get('dalali_rate', 10),
-            data.get('dalali', 0),
-            data.get('hammali_rate', 10),
-            data.get('hammali', 0),
-            data.get('freight', 0),
-            data.get('rate_diff', 0),
-            data.get('quality_diff', 0),
+            safe_float(data.get('bags', 0), 0),
+            safe_float(data.get('avg_bag_weight', 0), 0),
+            safe_float(data.get('net_weight', 0), 0),
+            safe_float(data.get('rate', 0), 0),
+            safe_float(data.get('amount', 0), 0),
+            safe_float(data.get('bank_commission', 0), 0),
+            safe_float(data.get('batav_percent', 1), 1),
+            safe_float(data.get('batav', 0), 0),
+            safe_float(data.get('shortage_percent', 1), 1),
+            safe_float(data.get('shortage', 0), 0),
+            safe_float(data.get('dalali_rate', 10), 10),
+            safe_float(data.get('dalali', 0), 0),
+            safe_float(data.get('hammali_rate', 10), 10),
+            safe_float(data.get('hammali', 0), 0),
+            safe_float(data.get('freight', 0), 0),
+            safe_float(data.get('rate_diff', 0), 0),
+            safe_float(data.get('quality_diff', 0), 0),
             data.get('quality_diff_comment', ''),
-            data.get('moisture_ded', 0),
-            data.get('moisture_ded_percent', 0),
-            data.get('tds', 0),
-            data.get('total_deduction', 0),
-            data.get('payable_amount', 0),
+            safe_float(data.get('moisture_ded', 0), 0),
+            safe_float(data.get('moisture_ded_percent', 0), 0),
+            safe_float(data.get('tds', 0), 0),
+            safe_float(data.get('total_deduction', 0), 0),
+            safe_float(data.get('payable_amount', 0), 0),
             data.get('payment_method', ''),
             data.get('payment_date', ''),
-            data.get('payment_amount', 0),
+            safe_float(data.get('payment_amount', 0), 0),
             data.get('payment_bank_account', ''),
             data.get('payment_due_date', ''),
             data.get('payment_due_comment', ''),
@@ -219,7 +220,20 @@ def update_slip(slip_id):
     """Update a purchase slip"""
     try:
         data = request.json
-        data = calculate_fields(data)
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM purchase_slips WHERE id = %s', (slip_id,))
+        existing_slip = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if existing_slip:
+            merged_data = dict(existing_slip)
+            merged_data.update(data)
+            merged_data = calculate_fields(merged_data)
+        else:
+            merged_data = calculate_fields(data)
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -243,55 +257,55 @@ def update_slip(slip_id):
                 prepared_by = %s, authorised_sign = %s, paddy_unloading_godown = %s
             WHERE id = %s
         ''', (
-            data.get('company_name', ''),
-            data.get('company_address', ''),
-            data.get('document_type', 'Purchase Slip'),
-            data.get('vehicle_no', ''),
-            data.get('date'),
-            data.get('payment_due_date', ''),
-            data.get('payment_due_comment', ''),
-            data.get('party_name', ''),
-            data.get('material_name', ''),
-            data.get('ticket_no', ''),
-            data.get('broker', ''),
-            data.get('terms_of_delivery', ''),
-            data.get('sup_inv_no', ''),
-            data.get('gst_no', ''),
-            data.get('bags', 0),
-            data.get('avg_bag_weight', 0),
-            data.get('net_weight', 0),
-            data.get('rate', 0),
-            data.get('amount', 0),
-            data.get('bank_commission', 0),
-            data.get('batav_percent', 1),
-            data.get('batav', 0),
-            data.get('shortage_percent', 1),
-            data.get('shortage', 0),
-            data.get('dalali_rate', 10),
-            data.get('dalali', 0),
-            data.get('hammali_rate', 10),
-            data.get('hammali', 0),
-            data.get('freight', 0),
-            data.get('rate_diff', 0),
-            data.get('quality_diff', 0),
-            data.get('quality_diff_comment', ''),
-            data.get('moisture_ded', 0),
-            data.get('moisture_ded_percent', 0),
-            data.get('tds', 0),
-            data.get('total_deduction', 0),
-            data.get('payable_amount', 0),
-            data.get('payment_method', ''),
-            data.get('payment_date', ''),
-            data.get('payment_amount', 0),
-            data.get('payment_bank_account', ''),
-            data.get('instalment_1', ''),
-            data.get('instalment_2', ''),
-            data.get('instalment_3', ''),
-            data.get('instalment_4', ''),
-            data.get('instalment_5', ''),
-            data.get('prepared_by', ''),
-            data.get('authorised_sign', ''),
-            data.get('paddy_unloading_godown', ''),
+            merged_data.get('company_name', ''),
+            merged_data.get('company_address', ''),
+            merged_data.get('document_type', 'Purchase Slip'),
+            merged_data.get('vehicle_no', ''),
+            merged_data.get('date'),
+            merged_data.get('payment_due_date', ''),
+            merged_data.get('payment_due_comment', ''),
+            merged_data.get('party_name', ''),
+            merged_data.get('material_name', ''),
+            merged_data.get('ticket_no', ''),
+            merged_data.get('broker', ''),
+            merged_data.get('terms_of_delivery', ''),
+            merged_data.get('sup_inv_no', ''),
+            merged_data.get('gst_no', ''),
+            safe_float(merged_data.get('bags', 0), 0),
+            safe_float(merged_data.get('avg_bag_weight', 0), 0),
+            safe_float(merged_data.get('net_weight', 0), 0),
+            safe_float(merged_data.get('rate', 0), 0),
+            safe_float(merged_data.get('amount', 0), 0),
+            safe_float(merged_data.get('bank_commission', 0), 0),
+            safe_float(merged_data.get('batav_percent', 1), 1),
+            safe_float(merged_data.get('batav', 0), 0),
+            safe_float(merged_data.get('shortage_percent', 1), 1),
+            safe_float(merged_data.get('shortage', 0), 0),
+            safe_float(merged_data.get('dalali_rate', 10), 10),
+            safe_float(merged_data.get('dalali', 0), 0),
+            safe_float(merged_data.get('hammali_rate', 10), 10),
+            safe_float(merged_data.get('hammali', 0), 0),
+            safe_float(merged_data.get('freight', 0), 0),
+            safe_float(merged_data.get('rate_diff', 0), 0),
+            safe_float(merged_data.get('quality_diff', 0), 0),
+            merged_data.get('quality_diff_comment', ''),
+            safe_float(merged_data.get('moisture_ded', 0), 0),
+            safe_float(merged_data.get('moisture_ded_percent', 0), 0),
+            safe_float(merged_data.get('tds', 0), 0),
+            safe_float(merged_data.get('total_deduction', 0), 0),
+            safe_float(merged_data.get('payable_amount', 0), 0),
+            merged_data.get('payment_method', ''),
+            merged_data.get('payment_date', ''),
+            safe_float(merged_data.get('payment_amount', 0), 0),
+            merged_data.get('payment_bank_account', ''),
+            merged_data.get('instalment_1', ''),
+            merged_data.get('instalment_2', ''),
+            merged_data.get('instalment_3', ''),
+            merged_data.get('instalment_4', ''),
+            merged_data.get('instalment_5', ''),
+            merged_data.get('prepared_by', ''),
+            merged_data.get('authorised_sign', ''),
+            merged_data.get('paddy_unloading_godown', ''),
             slip_id
         ))
 
